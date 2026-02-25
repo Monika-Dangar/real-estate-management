@@ -1,0 +1,841 @@
+openapi: 3.0.0
+info:
+  title: Real Estate Platform API
+  version: 1.0.0
+  description: API documentation for the Real Estate Platform, including authentication, user management, property CRUD, appointments, and notifications.
+
+servers:
+  - url: http://localhost:3000
+    description: Development Server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Enter your JWT Bearer token in the format **Bearer &lt;token&gt;**
+
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 60d0fe4f5311236168a109ca
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          example: john@example.com
+        role:
+          type: string
+          enum: [buyer, seller, admin]
+          example: buyer
+        status:
+          type: string
+          enum: [pending, active, blocked]
+          example: active
+        isPaid:
+          type: boolean
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Property:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 60d0fe4f5311236168a109cb
+        seller:
+          type: string
+          example: 60d0fe4f5311236168a109ca
+        title:
+          type: string
+          example: Beautiful 2 BHK Apartment
+        description:
+          type: string
+          example: A spacious apartment located in the city center.
+        price:
+          type: number
+          example: 15000000
+        configuration:
+          type: string
+          example: 2 BHK
+        location:
+          type: object
+          properties:
+            city:
+              type: string
+              example: Mumbai
+            locality:
+              type: string
+              example: Andheri West
+            state:
+              type: string
+              example: Maharashtra
+            coordinates:
+              type: object
+              properties:
+                lat:
+                  type: number
+                  example: 19.1136
+                lng:
+                  type: number
+                  example: 72.8697
+        budgetRange:
+          type: object
+          properties:
+            min:
+              type: number
+              example: 10000000
+            max:
+              type: number
+              example: 20000000
+        possessionDate:
+          type: string
+          format: date-time
+          example: 2024-12-31T00:00:00.000Z
+        amenities:
+          type: array
+          items:
+            type: string
+          example: [Gym, Swimming Pool, Parking]
+        isPremium:
+          type: boolean
+          example: false
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+          example: pending
+
+    Favorite:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 60d0fe4f5311236168a109cc
+        buyer:
+          type: string
+          example: 60d0fe4f5311236168a109cd
+        property:
+          type: string
+          example: 60d0fe4f5311236168a109cb
+
+    Appointment:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 60d0fe4f5311236168a109ce
+        buyer:
+          type: string
+          example: 60d0fe4f5311236168a109cd
+        seller:
+          type: string
+          example: 60d0fe4f5311236168a109ca
+        property:
+          type: string
+          example: 60d0fe4f5311236168a109cb
+        type:
+          type: string
+          enum: [Video Call, Site Visit]
+          example: Site Visit
+        status:
+          type: string
+          enum: [scheduled, completed, cancelled]
+          example: scheduled
+        appointmentDate:
+          type: string
+          format: date-time
+          example: 2023-11-20T10:00:00.000Z
+        notes:
+          type: string
+          example: Please bring property documents.
+
+    Notification:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 60d0fe4f5311236168a109cf
+        user:
+          type: string
+          example: 60d0fe4f5311236168a109ca
+        message:
+          type: string
+          example: Your property has been approved by admin.
+        isRead:
+          type: boolean
+          example: false
+        deliveryMethod:
+          type: string
+          enum: [email, sms, whatsapp]
+          example: email
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Error message details here
+        stack:
+          type: string
+          example: Stack trace (development mode only)
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/auth/register:
+    post:
+      summary: Register a new user
+      tags:
+        - Auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name:
+                  type: string
+                  example: Jane Doe
+                email:
+                  type: string
+                  example: jane@example.com
+                password:
+                  type: string
+                  example: supersecretpassword
+                role:
+                  type: string
+                  enum: [buyer, seller, admin]
+                  example: seller
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _id:
+                    type: string
+                  name:
+                    type: string
+                  email:
+                    type: string
+                  role:
+                    type: string
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI...
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/v1/auth/login:
+    post:
+      summary: Authenticate user & get token
+      tags:
+        - Auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  example: jane@example.com
+                password:
+                  type: string
+                  example: supersecretpassword
+      responses:
+        "200":
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _id:
+                    type: string
+                  name:
+                    type: string
+                  email:
+                    type: string
+                  role:
+                    type: string
+                  token:
+                    type: string
+        "401":
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/v1/users/profile:
+    get:
+      summary: Get current user profile
+      description: "**Access**: Protected (Any authenticated user)"
+      tags:
+        - Users
+      responses:
+        "200":
+          description: User profile data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authorized, token failed
+
+  /api/v1/users/pay-fee:
+    post:
+      summary: Pay seller fee
+      description: "**Access**: Protected (Seller only)"
+      tags:
+        - Users
+      responses:
+        "200":
+          description: Payment successful, isPaid status updated to true
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Fee paid successfully
+                  user:
+                    $ref: "#/components/schemas/User"
+        "401":
+          description: Not authorized
+        "403":
+          description: Forbidden - Not a seller
+
+  /api/v1/users:
+    get:
+      summary: Get all users
+      description: "**Access**: Protected (Admin only)"
+      tags:
+        - Users
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "401":
+          description: Not authorized
+        "403":
+          description: Forbidden - Not an admin
+
+  /api/v1/users/{id}/status:
+    put:
+      summary: Update user status
+      description: "**Access**: Protected (Admin only)"
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: User ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [pending, active, blocked]
+                  example: active
+      responses:
+        "200":
+          description: Status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid status value
+        "401":
+          description: Not authorized
+        "403":
+          description: Forbidden - Not an admin
+        "404":
+          description: User not found
+
+  /api/v1/properties:
+    get:
+      summary: Get all properties with optional filtering and search
+      description: "Public route. Supports query params: keyword, city, locality, minPrice, maxPrice, configuration, sort"
+      tags:
+        - Properties
+      security: []
+      parameters:
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          description: Search by title or description
+        - in: query
+          name: city
+          schema:
+            type: string
+        - in: query
+          name: locality
+          schema:
+            type: string
+        - in: query
+          name: minPrice
+          schema:
+            type: number
+        - in: query
+          name: maxPrice
+          schema:
+            type: number
+      responses:
+        "200":
+          description: List of properties
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Property"
+    post:
+      summary: Create a new property
+      description: "**Access**: Protected (Seller only)"
+      tags:
+        - Properties
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                [
+                  title,
+                  description,
+                  price,
+                  configuration,
+                  location,
+                  possessionDate,
+                ]
+              properties:
+                title:
+                  type: string
+                  example: Modern 3 BHK Apartment
+                description:
+                  type: string
+                  example: Luxurious apartment with sea view.
+                price:
+                  type: number
+                  example: 25000000
+                configuration:
+                  type: string
+                  example: 3 BHK
+                location:
+                  type: object
+                  properties:
+                    city:
+                      type: string
+                      example: Mumbai
+                    locality:
+                      type: string
+                      example: Bandra West
+                    state:
+                      type: string
+                      example: Maharashtra
+                possessionDate:
+                  type: string
+                  format: date-time
+                  example: 2025-01-01T00:00:00.000Z
+                amenities:
+                  type: array
+                  items:
+                    type: string
+                  example: [Gym, Pool, Security]
+      responses:
+        "201":
+          description: Property created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Property"
+        "401":
+          description: Not authorized
+        "403":
+          description: Forbidden - Not a seller or payment pending
+        "400":
+          description: Validation error
+
+  /api/v1/properties/my-properties:
+    get:
+      summary: Get logged in seller's properties
+      description: "**Access**: Protected (Seller only)"
+      tags:
+        - Properties
+      responses:
+        "200":
+          description: List of your properties
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Property"
+        "401":
+          description: Not authorized
+        "403":
+          description: Forbidden - Not a seller
+
+  /api/v1/properties/{id}:
+    get:
+      summary: Get property by ID
+      description: "Public view. If accessed by buyer, automatically tracks read intent or logs interaction."
+      tags:
+        - Properties
+      security: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Property ID
+      responses:
+        "200":
+          description: Property details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Property"
+        "404":
+          description: Property not found
+    put:
+      summary: Update a property
+      description: "**Access**: Protected (Seller only - must be the owner of the property)"
+      tags:
+        - Properties
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Property ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                price:
+                  type: number
+                  example: 24000000
+                description:
+                  type: string
+                  example: Price slightly negotiable
+      responses:
+        "200":
+          description: Property updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Property"
+        "401":
+          description: Not authorized
+        "403":
+          description: Forbidden - Not your property
+        "404":
+          description: Property not found
+
+  /api/v1/properties/{id}/status:
+    put:
+      summary: Update property status
+      description: "**Access**: Protected (Admin only)"
+      tags:
+        - Properties
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Property ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [pending, approved, rejected]
+                  example: approved
+      responses:
+        "200":
+          description: Property status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Property"
+        "401":
+          description: Not authorized
+        "403":
+          description: Forbidden - Not an admin
+        "404":
+          description: Property not found
+
+  /api/v1/favorites:
+    get:
+      summary: Get all favorites for logged in buyer
+      description: "**Access**: Protected (Buyer only)"
+      tags:
+        - Favorites
+      responses:
+        "200":
+          description: List of favorited properties
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Favorite"
+        "401":
+          description: Not authorized
+        "403":
+          description: Forbidden - Not a buyer
+    post:
+      summary: Add a property to favorites
+      description: "**Access**: Protected (Buyer only)"
+      tags:
+        - Favorites
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [propertyId]
+              properties:
+                propertyId:
+                  type: string
+                  example: 60d0fe4f5311236168a109cb
+      responses:
+        "201":
+          description: Property added to favorites
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Favorite"
+        "400":
+          description: Property already in favorites
+        "401":
+          description: Not authorized
+        "403":
+          description: Forbidden - Not a buyer
+
+  /api/v1/favorites/{id}:
+    delete:
+      summary: Remove property from favorites
+      description: "**Access**: Protected (Buyer only)"
+      tags:
+        - Favorites
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Favorite item ID
+      responses:
+        "200":
+          description: Favorite removed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Favorite removed
+        "401":
+          description: Not authorized
+        "403":
+          description: Forbidden - Not a buyer
+        "404":
+          description: Favorite not found
+
+  /api/v1/appointments:
+    get:
+      summary: Get appointments
+      description: "**Access**: Protected (Any authenticated user). Buyers see requested appointments, sellers see requests on their properties, admins see all."
+      tags:
+        - Appointments
+      responses:
+        "200":
+          description: List of appointments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Appointment"
+        "401":
+          description: Not authorized
+
+    post:
+      summary: Request an appointment
+      description: "**Access**: Protected (Buyer only)"
+      tags:
+        - Appointments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [propertyId, sellerId, type, appointmentDate]
+              properties:
+                propertyId:
+                  type: string
+                  example: 60d0fe4f5311236168a109cb
+                sellerId:
+                  type: string
+                  example: 60d0fe4f5311236168a109ca
+                type:
+                  type: string
+                  enum: [Video Call, Site Visit]
+                  example: Site Visit
+                appointmentDate:
+                  type: string
+                  format: date-time
+                  example: 2024-05-10T14:30:00.000Z
+                notes:
+                  type: string
+                  example: I am interested in this flat.
+      responses:
+        "201":
+          description: Appointment requested
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "401":
+          description: Not authorized
+        "403":
+          description: Forbidden - Not a buyer
+
+  /api/v1/appointments/{id}/status:
+    put:
+      summary: Update appointment status
+      description: "**Access**: Protected (Sellers can update status. Buyers can cancel.)"
+      tags:
+        - Appointments
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Appointment ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [scheduled, completed, cancelled]
+                  example: completed
+      responses:
+        "200":
+          description: Appointment status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "401":
+          description: Not authorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Appointment not found
+
+  /api/v1/notifications:
+    get:
+      summary: Get user's notifications
+      description: "**Access**: Protected (Any authenticated user)"
+      tags:
+        - Notifications
+      responses:
+        "200":
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+        "401":
+          description: Not authorized
+
+  /api/v1/notifications/{id}/read:
+    put:
+      summary: Mark notification as read
+      description: "**Access**: Protected (Any authenticated user)"
+      tags:
+        - Notifications
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Notification ID
+      responses:
+        "200":
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+        "401":
+          description: Not authorized
+        "404":
+          description: Notification not found
