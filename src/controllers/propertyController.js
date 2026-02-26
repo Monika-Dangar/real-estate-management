@@ -6,15 +6,20 @@ import User from '../models/User.js';
 // @access  Public
 export const getProperties = async (req, res) => {
     try {
-        const { city, locality, configuration, minBudget, maxBudget, maxPossessionDate } = req.query;
+        const { keyword, city, locality, configuration, minBudget, maxBudget, maxPossessionDate } = req.query;
 
         let query = { status: 'approved' }; // Only show approved properties to public
 
-        // Filters
+        // Keyword Search (uses text index on title, description, city, locality)
+        if (keyword) {
+            query.$text = { $search: keyword };
+        }
+
+        // Specific Filters
         if (city) query['location.city'] = new RegExp(city, 'i');
         if (locality) query['location.locality'] = new RegExp(locality, 'i');
         if (configuration) query.configuration = configuration;
-        
+
         if (minBudget || maxBudget) {
             query.price = {};
             if (minBudget) query.price.$gte = Number(minBudget);
@@ -109,7 +114,7 @@ export const updateProperty = async (req, res) => {
             property.amenities = req.body.amenities || property.amenities;
             property.videos = req.body.videos || property.videos;
             property.isPremium = req.body.isPremium !== undefined ? req.body.isPremium : property.isPremium;
-            
+
             // Re-eval for admin approval if significant fields change (optional logic)
             // property.status = 'pending'; 
 
@@ -141,7 +146,7 @@ export const getMyProperties = async (req, res) => {
 export const updatePropertyStatus = async (req, res) => {
     try {
         const { status } = req.body;
-        
+
         if (!['pending', 'approved', 'rejected'].includes(status)) {
             return res.status(400).json({ message: 'Invalid status' });
         }

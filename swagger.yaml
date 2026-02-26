@@ -458,8 +458,8 @@ paths:
 
   /api/v1/properties:
     get:
-      summary: Get all properties with optional filtering and search
-      description: "Public route. Supports query params: keyword, city, locality, minPrice, maxPrice, configuration, sort"
+      summary: Get all properties with keyword search and strict filtering
+      description: "Public route. Supports text-indexed global `keyword` search across title/description/city, plus explicit query filters like city, locality, minBudget, maxBudget, possessionDate, configuration"
       tags:
         - Properties
       security: []
@@ -901,3 +901,41 @@ paths:
           description: Not authorized
         "404":
           description: Notification not found
+
+  /api/v1/upload:
+    post:
+      summary: Upload a media file
+      description: "**Access**: Protected (Seller only). Accepts `multipart/form-data` with a `media` field for images and videos."
+      tags:
+        - Media
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                media:
+                  type: string
+                  format: binary
+                  description: "Image or MP4 Video file."
+      responses:
+        "200":
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: File Uploaded
+                  filePath:
+                    type: string
+                    example: /uploads/media-16781231.jpg
+        "400":
+          description: No file uploaded or Invalid Type
+        "401":
+          description: Not authorized
+        "403":
+          description: Forbidden - Not a seller

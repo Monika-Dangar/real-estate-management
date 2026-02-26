@@ -16,6 +16,8 @@ import favoriteRoutes from './src/routes/favoriteRoutes.js';
 import appointmentRoutes from './src/routes/appointmentRoutes.js';
 import notificationRoutes from './src/routes/notificationRoutes.js';
 
+import uploadRoutes from './src/routes/uploadRoutes.js';
+
 // Load env vars
 dotenv.config();
 
@@ -25,7 +27,9 @@ connectDB();
 const app = express();
 
 // Security Middlewares
-app.use(helmet());
+app.use(helmet({
+    crossOriginResourcePolicy: false, // Prevent helmet from blocking local images
+}));
 
 // Logging Middleware
 if (process.env.NODE_ENV === 'development') {
@@ -38,9 +42,12 @@ app.use(cors());
 // Body parser
 app.use(express.json());
 
-// Set up Swagger Doc
+// Set up static folder for uploads
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Set up Swagger Doc
 const swaggerDocument = YAML.load(path.join(__dirname, 'swagger.yaml'));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
@@ -51,6 +58,7 @@ app.use('/api/v1/properties', propertyRoutes);
 app.use('/api/v1/favorites', favoriteRoutes);
 app.use('/api/v1/appointments', appointmentRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/upload', uploadRoutes);
 
 app.get('/', (req, res) => {
     res.send('API is running...');

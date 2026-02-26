@@ -22,27 +22,33 @@ A specialized Node.js backend application designed for a real estate platform. I
 
 ### 4. Search & Filtering
 - Open API endpoint (`/api/v1/properties`) allows flexible search/filtering by:
+  - **Keyword**: Global `$text` searching across property titles, descriptions, and localities utilizing MongoDB text indexing.
   - Budget (min/max price)
   - Location (City/Locality string matching)
   - Configuration (e.g., 2 BHK)
   - Possession Date limits
 - Premium listings are sorted at the top of the search results automatically.
 
-### 5. Favorites
+### 5. Media Uploads (Multer)
+- Integrated `multer` middleware for handling `multipart/form-data`.
+- Endpoint `/api/v1/upload` allows securely uploading images/videos locally inside the `uploads/` directory with enforced file validation.
+- All media files are served statically from the `/uploads` path.
+
+### 6. Favorites
 - Authenticated buyers can mark properties as favorites, preventing duplicate additions via MongoDB indexing.
 
-### 6. Appointments
+### 7. Appointments
 - Buyers request appointments (Video Call or Site Visit) on a property.
 - Sellers and buyers can track status. Sellers can mark status as scheduled, cancelled, or completed. Admin has full oversight.
 
-### 7. Notifications (Mock)
+### 8. Notifications (Mock)
 - Notification records are generated in the database internally (upon appointment request and update). Options exist for mocked delivery methods (email/sms/whatsapp).
 
-### 8. Monetization
+### 9. Monetization
 - **Seller Paid Status:** Sellers invoke `/api/v1/users/pay-fee` to upgrade their account to paid, which allows them to list properties.
 - **Premium properties:** Sellers can mark properties as premium, handled by indexing for top placement in querying.
 
-### 9. Documentation
+### 10. Documentation
 - Complete OpenAPI 3.0 documentation using **Swagger UI**.
 - Fully integrated with Express to run at `/api-docs`.
 

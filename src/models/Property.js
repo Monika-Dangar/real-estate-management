@@ -65,6 +65,10 @@ const propertySchema = new mongoose.Schema(
 );
 
 // Indexes for searching
+propertySchema.index(
+    { title: 'text', description: 'text', 'location.city': 'text', 'location.locality': 'text' },
+    { weights: { title: 10, 'location.locality': 8, 'location.city': 5, description: 2 } }
+);
 propertySchema.index({ 'location.city': 1, 'location.locality': 1, status: 1 });
 propertySchema.index({ price: 1, isPremium: -1 });
 
