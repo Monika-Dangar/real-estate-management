@@ -5,7 +5,7 @@ info:
   description: API documentation for the Real Estate Platform, including authentication, user management, property CRUD, appointments, and notifications.
 
 servers:
-  - url: http://localhost:3000
+  - url: http://localhost:3003
     description: Development Server
 
 components:
